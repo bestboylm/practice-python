@@ -36,5 +36,46 @@ def m2():
         print(e)
 
 
-m2()
-print(RESPONSE)
+def wrapper1(fn):
+    def inner(*args, **kwargs):
+        print("wrapper1-start")
+        ret = fn(*args, **kwargs)
+        print("wrapper1-end")
+        return ret
+
+    return inner
+
+
+def wrapper2(fn):
+    def inner(*args, **kwargs):
+        print("wrapper2-start")
+        ret = fn(*args, **kwargs)
+        print("wrapper2-end")
+        return ret
+
+    return inner
+
+
+def wrapper3(fn):
+    def inner(*args, **kwargs):
+        print("wrapper3 - start")
+        ret = fn(*args, **kwargs)
+        print("wrapper3 - end")
+        return ret
+
+    return inner
+
+
+# 就近原则
+@wrapper1
+@wrapper2
+@wrapper3
+def func():
+    print("我是可怜的func")
+
+
+if __name__ == "__main__":
+    # m2()
+    # print(RESPONSE)
+
+    func()

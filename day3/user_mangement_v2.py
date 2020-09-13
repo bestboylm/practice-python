@@ -45,6 +45,7 @@ RESPONSE = {
 }
 USER_PROFILE_PATH = "./user.db"
 USER_DETAIL_FILE_PATH = "./user_info.json"
+USER_DETAIL_CSV_PATH = "./user_info.csv"
 
 
 # 其它全局变量
@@ -97,6 +98,7 @@ def help_info():
     \tupdate: update old_user_name set field_name = new_value
     \tlist: list (it will list all of users.)
     \tfind: find old_user_name
+    \texport: use "export" or "ept" to get a csv file
     \tq: process exit
     """)
 
@@ -193,7 +195,14 @@ def user_update(data):
 
 
 # 删除用户信息
-def user_delete(key):
+def user_delete(key_l):
+    if not key_l:
+        RESPONSE["code"] = 1001
+        RESPONSE["message"] = "\033[33mInvalid data\033[0m"
+        RESPONSE["data"] = {}
+        return user_show()
+
+    key = key_l[0]
     if key not in RESULT:
         RESPONSE["code"] = 1004
         RESPONSE["message"] = "\033[33m{} is not existed, cannot delete.\033[0m".format(key)
@@ -207,9 +216,22 @@ def user_delete(key):
     user_show()
 
 
-# 导出用户数据(未完成)
-def data_export():
-    pass
+# 导出用户数据
+def data_export(*args, **kwargs):
+    with open(USER_DETAIL_CSV_PATH, "w", newline="") as fd:
+        cw = csv.writer(fd)
+        cw.writerow(FIELD_NAME_L)
+        for k, v in RESULT.items():
+            item = []
+            age = v.get("age")
+            phone = v.get("phone")
+            email = v.get("email")
+            item.append(k)
+            item.append(age)
+            item.append(phone)
+            item.append(email)
+            cw.writerow(item)
+    return True
 
 
 # 持久化数据到磁盘
@@ -232,6 +254,7 @@ def load_data():
             user_data_d = json.load(fp=fd)
         RESULT.clear()
         RESULT.update(user_data_d)
+    # print(RESULT)
 
 
 # 格式化输出
@@ -256,10 +279,14 @@ def user_show(server_response=RESPONSE):
         print("\033[31m%s\033[0m" % server_response["message"])
 
 
-# 处理用户输入
+# 处理用户更改输入
 def get_change_data(data):
     result = {}
     data_l = data.split()
+
+    if len(data_l) <= 1:
+        return False
+
     if data_l[2] != "set":
         return False
 
@@ -285,7 +312,7 @@ def get_change_data(data):
 
 
 @time_cal
-@user_verification
+# @user_verification
 def main():
     # 加载已存在的用户数据
     load_data()
@@ -296,6 +323,8 @@ def main():
         "update": user_update,
         "list": user_list,
         "find": user_find,
+        "export": data_export,
+        "ept": data_export,
     }
     while True:
         user_input = input("INPUT >>:\t").strip()
@@ -313,9 +342,11 @@ def main():
 
         if operator_symbol == 'help':
             help_info()
+            continue
 
         if operator_symbol == 'q':
-            sys.exit(0)
+            # sys.exit(0)
+            return
 
         if operator_symbol not in method_dict:
             print("\033[36mno this operator symbol, u can use help to check.\033[0m")
